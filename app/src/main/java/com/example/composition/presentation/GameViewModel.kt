@@ -9,10 +9,10 @@ import com.example.composition.R
 import com.example.composition.data.GameRepositoryImpl
 import com.example.composition.domain.entity.GameResult
 import com.example.composition.domain.entity.GameSettings
+import com.example.composition.domain.entity.Level
 import com.example.composition.domain.entity.Question
 import com.example.composition.domain.usecases.GenerateQuestionUseCase
 import com.example.composition.domain.usecases.GetGameSettingsUseCase
-import java.util.logging.Level
 
 class GameViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -66,6 +66,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         getGameSettings(level)
         startTimer()
         generateQuestion()
+        updateProgress()
     }
 
     fun chooseAnswer(number: Int) {
@@ -83,7 +84,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
 
     }
 
-    private fun updateProgress(){
+    private fun updateProgress() {
         val percent = calculatePercentOfRightAnswers()
         _percentOfRightAnswer.value = percent
         _progressAnswers.value = String.format(
@@ -95,8 +96,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         _enoughPercentOfRightAnswers.value = percent >= gameSettings.minPercentOfRightAnswers
     }
 
-    private fun calculatePercentOfRightAnswers(): Int{
-        return ((countOfRightAnswers/countOfQuestion.toDouble()) * 100).toInt()
+    private fun calculatePercentOfRightAnswers(): Int {
+        if (countOfQuestion == 0) {
+            return 0
+        }
+        return ((countOfRightAnswers / countOfQuestion.toDouble()) * 100).toInt()
     }
 
     private fun getGameSettings(level: Level) {
@@ -137,9 +141,9 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private fun finishGame() {
         val gameResult = GameResult(
             winner = enoughCountOfRightAnswers.value == true && enoughPercentOfRightAnswers.value == true,
-        countOfRightAnswers = countOfRightAnswers,
-        countOfQuestion = countOfQuestion,
-        gameSettings = gameSettings
+            countOfRightAnswers = countOfRightAnswers,
+            countOfQuestion = countOfQuestion,
+            gameSettings = gameSettings
         )
     }
 
