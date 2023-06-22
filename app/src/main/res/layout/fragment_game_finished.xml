@@ -85,6 +85,7 @@
         android:layout_height="wrap_content"
         android:backgroundTint="@color/black"
         android:text="@string/retry"
+        android:textColor="@color/white"
         android:layout_marginBottom="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         />
