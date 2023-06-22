@@ -1,10 +1,12 @@
 package com.example.composition.presentation
 
 import android.app.Application
+import android.content.Context
 import android.os.CountDownTimer
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import com.example.composition.R
 import com.example.composition.data.GameRepositoryImpl
 import com.example.composition.domain.entity.GameResult
@@ -14,12 +16,13 @@ import com.example.composition.domain.entity.Question
 import com.example.composition.domain.usecases.GenerateQuestionUseCase
 import com.example.composition.domain.usecases.GetGameSettingsUseCase
 
-class GameViewModel(application: Application) : AndroidViewModel(application) {
+class GameViewModel(
+    private val application: Application,
+    private val level: Level
+) : ViewModel() {
 
     private lateinit var gameSettings: GameSettings
-    private lateinit var level: Level
 
-    private val context = application
     private val repository = GameRepositoryImpl
 
     private val generateQuestionUseCase = GenerateQuestionUseCase(repository)
@@ -62,8 +65,11 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     private var countOfRightAnswers = 0
     private var countOfQuestion = 0
 
-    fun startGame(level: Level) {
-        getGameSettings(level)
+    init {
+        startGame()
+    }
+    private fun startGame() {
+        getGameSettings()
         startTimer()
         generateQuestion()
         updateProgress()
@@ -88,7 +94,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val percent = calculatePercentOfRightAnswers()
         _percentOfRightAnswer.value = percent
         _progressAnswers.value = String.format(
-            context.resources.getString(R.string.progress_answers),
+            application.resources.getString(R.string.progress_answers),
             countOfRightAnswers,
             gameSettings.minCountOfRightAnswers
         )
@@ -103,16 +109,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         return ((countOfRightAnswers / countOfQuestion.toDouble()) * 100).toInt()
     }
 
-    private fun getGameSettings(level: Level) {
-        this.level = level
+    private fun getGameSettings() {
         this.gameSettings = getGameSettingsUseCase(level)
         _minPercent.value = gameSettings.minPercentOfRightAnswers
     }
 
 
     private fun startTimer() {
-        val timer = object : CountDownTimer(
-            gameSettings.gamaTimeInSeconds * MILLIS_IN_SECONDS, MILLIS_IN_SECONDS
+        timer = object : CountDownTimer(
+            gameSettings.gamaTimeInSeconds * MILLIS_IN_SECONDS,
+            MILLIS_IN_SECONDS
         ) {
             override fun onTick(millisUntilFinished: Long) {
                 _formattedTime.value = formatTime(millisUntilFinished)
@@ -122,7 +128,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 finishGame()
             }
         }
-        timer.start()
+        timer?.start()
     }
 
     private fun generateQuestion() {
@@ -133,17 +139,16 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
         val seconds = millisUntilFinished / MILLIS_IN_SECONDS
         val minutes = seconds / SECONDS_IN_MINUTES
         val leftSeconds = seconds - (minutes * SECONDS_IN_MINUTES)
-        return String().format("%02d:%02d", minutes, seconds, leftSeconds)
-
+        return String.format("%02d:%02d", minutes, leftSeconds)
     }
 
 
     private fun finishGame() {
-        val gameResult = GameResult(
-            winner = enoughCountOfRightAnswers.value == true && enoughPercentOfRightAnswers.value == true,
-            countOfRightAnswers = countOfRightAnswers,
-            countOfQuestion = countOfQuestion,
-            gameSettings = gameSettings
+        _gameResult.value = GameResult(
+            enoughCountOfRightAnswers.value == true && enoughPercentOfRightAnswers.value == true,
+            countOfRightAnswers,
+            countOfQuestion,
+            gameSettings
         )
     }
 
