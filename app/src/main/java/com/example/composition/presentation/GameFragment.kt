@@ -17,10 +17,19 @@ import com.example.composition.domain.entity.Level
 
 class GameFragment : Fragment() {
 
+    private lateinit var level: Level
+
+    private val viewModelFactory by lazy {
+        GameViewModelFactory(
+            level,
+            requireActivity().application
+        )
+    }
+
     private val viewModel: GameViewModel by lazy {
         ViewModelProvider(
             this,
-            ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().application)
+            viewModelFactory
         )[GameViewModel::class.java]
     }
 
@@ -35,7 +44,6 @@ class GameFragment : Fragment() {
         }
     }
 
-    private lateinit var level: Level
 
     private var _binding: FragmentGameBinding? = null
     private val binding: FragmentGameBinding
@@ -64,7 +72,6 @@ class GameFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         observeViewModel()
         setClickListenersToOptions()
-        viewModel.startGame(level)
     }
 
     private fun launchGameFinishedFragment(gameResult: GameResult) {
@@ -115,11 +122,11 @@ class GameFragment : Fragment() {
 
     private fun getColorByState(goodState: Boolean): Int {
         val colorResId = if (goodState) {
-            android.R.color.holo_red_light
+            android.R.color.holo_green_light
         }
         else
         {
-            android.R.color.holo_green_light
+            android.R.color.holo_red_light
         }
         return ContextCompat.getColor(requireContext(), colorResId)
     }
